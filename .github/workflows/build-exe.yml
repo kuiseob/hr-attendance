@@ -1,0 +1,74 @@
+name: Windows EXE 빌드 및 릴리즈
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: 패키지 설치
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller
+
+      - name: EXE 빌드
+        run: |
+          pyinstaller `
+            --onefile `
+            --windowed `
+            --noupx `
+            --clean `
+            --name="SEOJIN_HR" `
+            --hidden-import=tkinter `
+            --hidden-import=tkinter.ttk `
+            --hidden-import=sqlite3 `
+            hr_app.py
+
+      - name: 버전 태그
+        id: tag
+        run: |
+          $date = Get-Date -Format "yyyy.MM.dd-HHmm"
+          echo "tag=v$date" >> $env:GITHUB_OUTPUT
+
+      - name: ZIP 패키징
+        run: Compress-Archive -Path dist\SEOJIN_HR.exe -DestinationPath dist\SEOJIN_HR.zip
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag.outputs.tag }}
+          name: "인사근태 ${{ steps.tag.outputs.tag }}"
+          body: |
+            ## SEO JIN PRECISION 인사/근태 관리 시스템 (Windows)
+
+            ### 다운로드
+            - **SEOJIN_HR.exe** — 단일 실행 파일
+            - **SEOJIN_HR.zip** — 압축본
+
+            ### 차단 해제 방법
+            1. EXE 우클릭 → 속성 → "차단 해제" 체크 → 확인
+            2. 더블클릭 실행
+
+            ### 주요 기능
+            - 👤 인사 관리 (사원 마스터)
+            - ⏱ 근태 관리 (출퇴근 + 자동 시간 계산)
+            - 🌴 휴가 관리 (연차/병가/휴직 신청·승인)
+            - 💰 급여 관리 (기본급 + 초과수당 - 공제)
+            - 🏠 대시보드 (요약 카드)
+          files: |
+            dist/SEOJIN_HR.exe
+            dist/SEOJIN_HR.zip
+          draft: false
+          prerelease: false
