@@ -738,13 +738,32 @@ class HRApp:
         def _lbl(r, c, t):
             make_label(f, t, size=9, color=C['secondary'], bg='white').grid(row=r, column=c, sticky='w', padx=6, pady=10)
 
+        edit_id = [None]   # 수정 모드 추적 (시계 동기화에서 참조)
+
         _lbl(0, 0, "사원 *")
         emp_v = tk.StringVar()
         emp_e = make_combo(f, emp_v, emp_disp, width=20); emp_e.grid(row=0, column=1, padx=4, pady=8)
 
         _lbl(0, 2, "근무일 *")
         dt_v = tk.StringVar(value=date.today().isoformat())
-        dt_e = make_entry(f, dt_v, 14); dt_e.grid(row=0, column=3, padx=4, pady=8)
+        dt_e = tk.Entry(f, textvariable=dt_v,
+                        font=('Malgun Gothic', 11, 'bold'),
+                        relief='solid', bd=1,
+                        bg='#E0F2F1', fg=C['primary_dark'],
+                        highlightthickness=2,
+                        highlightbackground='#90A4AE',
+                        highlightcolor=C['primary'],
+                        width=14, justify='center')
+        dt_e.grid(row=0, column=3, padx=4, pady=8)
+        # 시계와 연동: 매일 자정 지나면 자동 갱신
+        def _sync_date():
+            try:
+                today_str = date.today().isoformat()
+                if dt_v.get() != today_str and edit_id[0] is None:
+                    dt_v.set(today_str)
+                f.after(60000, _sync_date)  # 1분마다 체크
+            except: pass
+        f.after(2000, _sync_date)
 
         _lbl(0, 4, "출근 (HH:MM)")
         in_v = tk.StringVar(value='09:00')
@@ -766,7 +785,6 @@ class HRApp:
         cols = ('AID','근무일','사번','이름','출근','퇴근','근무시간','초과','상태','비고')
         tree = make_tree(wrap, cols, [0, 100, 80, 80, 70, 70, 80, 70, 70, 200], height=14)
         tree.column('AID', width=0, stretch=False)
-        edit_id = [None]
 
         def _read(w, v, default=''):
             try:
