@@ -586,12 +586,139 @@ class HRApp:
     # ===========================================
     def _pg_attendance(self):
         p = self.page_area
-        page_header(p, "근태 관리", "  출퇴근 입력, 근무시간 자동 계산")
+        page_header(p, "근태 관리", "  출근/퇴근 자동 기록 + 근무시간 자동 계산")
 
         emps = self.db.query("SELECT id,emp_no,name FROM employees WHERE active=1 ORDER BY emp_no")
         emp_disp = [f"{r[1]} {r[2]}" for r in emps]
 
-        f = tk.Frame(p, bg='white', padx=22, pady=14); f.pack(fill='x', padx=20, pady=12)
+        # ── 1. 출근/퇴근 자동 기록 패널 ──
+        auto = tk.Frame(p, bg='#E0F2F1', padx=20, pady=18)
+        auto.pack(fill='x', padx=20, pady=(12, 4))
+
+        tk.Label(auto, text="⏱  출근 / 퇴근 자동 기록",
+                 font=('Malgun Gothic', 14, 'bold'),
+                 fg=C['primary_dark'], bg='#E0F2F1').pack(side='left', padx=(0, 16))
+
+        # 실시간 시계
+        clock_lbl = tk.Label(auto, text='--:--:--',
+                             font=('Menlo', 24, 'bold'),
+                             fg=C['accent'], bg='#E0F2F1')
+        clock_lbl.pack(side='left', padx=10)
+
+        def _tick_clock():
+            try:
+                clock_lbl.config(text=datetime.now().strftime('%H:%M:%S'))
+                clock_lbl.after(1000, _tick_clock)
+            except: pass
+        _tick_clock()
+
+        # 사원 선택
+        tk.Label(auto, text="사원:", font=('Malgun Gothic', 11, 'bold'),
+                 bg='#E0F2F1').pack(side='left', padx=(20, 4))
+        auto_emp_v = tk.StringVar()
+        auto_emp_combo = ttk.Combobox(auto, textvariable=auto_emp_v,
+                                       values=emp_disp, state='readonly',
+                                       width=16, font=('Malgun Gothic', 11))
+        auto_emp_combo.pack(side='left', padx=4)
+
+        # 상태 표시
+        status_lbl = tk.Label(auto, text='',
+                              font=('Malgun Gothic', 10, 'bold'),
+                              bg='#E0F2F1', fg=C['secondary'])
+        status_lbl.pack(side='left', padx=12)
+
+        def _resolve_emp_id(disp):
+            if not disp or disp not in emp_disp: return None
+            return emps[emp_disp.index(disp)][0]
+
+        def _today_record(emp_id):
+            today = date.today().isoformat()
+            r = self.db.query("""SELECT id,check_in,check_out FROM attendance
+                                 WHERE emp_id=? AND work_date=? ORDER BY id DESC LIMIT 1""",
+                              (emp_id, today))
+            return r[0] if r else None
+
+        def _refresh_status(*_):
+            disp = auto_emp_v.get()
+            emp_id = _resolve_emp_id(disp)
+            if not emp_id:
+                status_lbl.config(text=''); return
+            rec = _today_record(emp_id)
+            if not rec:
+                status_lbl.config(text='⚪ 미출근', fg='#90A4AE')
+            elif rec[1] and not rec[2]:
+                status_lbl.config(text=f'🟢 출근 {rec[1]} (근무중)', fg=C['success'])
+            elif rec[1] and rec[2]:
+                status_lbl.config(text=f'✅ 출근 {rec[1]} → 퇴근 {rec[2]}', fg=C['primary'])
+            else:
+                status_lbl.config(text='⚪ 미출근', fg='#90A4AE')
+        auto_emp_combo.bind('<<ComboboxSelected>>', _refresh_status)
+
+        def _calc(ci, co):
+            try:
+                ti = datetime.strptime(ci, '%H:%M'); to = datetime.strptime(co, '%H:%M')
+                hours = (to - ti).total_seconds() / 3600
+                if hours < 0: hours += 24
+                if hours > 4: hours -= 1  # 점심 1h 차감
+                ot = max(0, hours - 8); base = min(hours, 8)
+                return round(base, 2), round(ot, 2)
+            except: return 0, 0
+
+        def _check_in():
+            disp = auto_emp_v.get()
+            emp_id = _resolve_emp_id(disp)
+            if not emp_id:
+                messagebox.showerror("출근", "사원을 선택하세요."); return
+            rec = _today_record(emp_id)
+            if rec and rec[1]:
+                messagebox.showwarning("출근",
+                    f"오늘 이미 출근 기록이 있습니다.\n출근시각: {rec[1]}"); return
+            now_s = datetime.now().strftime('%H:%M')
+            today = date.today().isoformat()
+            # 9시 이후 출근이면 '지각'
+            status = '정상'
+            try:
+                if datetime.strptime(now_s, '%H:%M') > datetime.strptime('09:00', '%H:%M'):
+                    status = '지각'
+            except: pass
+            self.db.execute("""INSERT INTO attendance(emp_id,work_date,check_in,status)
+                               VALUES(?,?,?,?)""", (emp_id, today, now_s, status))
+            messagebox.showinfo("출근 완료",
+                f"✅ {disp.split(' ',1)[1] if ' ' in disp else disp} 님\n"
+                f"출근 시각: {now_s}\n상태: {status}")
+            _refresh_status(); _load()
+
+        def _check_out():
+            disp = auto_emp_v.get()
+            emp_id = _resolve_emp_id(disp)
+            if not emp_id:
+                messagebox.showerror("퇴근", "사원을 선택하세요."); return
+            rec = _today_record(emp_id)
+            if not rec or not rec[1]:
+                messagebox.showwarning("퇴근",
+                    "오늘 출근 기록이 없습니다.\n먼저 [🟢 출근] 버튼을 눌러주세요."); return
+            if rec[2]:
+                messagebox.showwarning("퇴근",
+                    f"오늘 이미 퇴근했습니다.\n퇴근시각: {rec[2]}"); return
+            now_s = datetime.now().strftime('%H:%M')
+            wh, ot = _calc(rec[1], now_s)
+            self.db.execute("""UPDATE attendance SET check_out=?, work_hours=?, overtime_hours=?
+                               WHERE id=?""", (now_s, wh, ot, rec[0]))
+            messagebox.showinfo("퇴근 완료",
+                f"✅ {disp.split(' ',1)[1] if ' ' in disp else disp} 님\n"
+                f"퇴근 시각: {now_s}\n근무 {wh}h / 초과 {ot}h")
+            _refresh_status(); _load()
+
+        # 출근/퇴근 버튼
+        color_btn(auto, "🟢 출근", _check_in, theme='save', size=14, padx=24, pady=10).pack(side='left', padx=(20, 6))
+        color_btn(auto, "🔴 퇴근", _check_out, theme='delete', size=14, padx=24, pady=10).pack(side='left', padx=6)
+
+        # ── 2. 수동 등록 폼 ──
+        tk.Label(p, text=" 수동 등록 / 수정 (특별 케이스용)",
+                 font=('Malgun Gothic', 11, 'bold'),
+                 fg=C['secondary'], bg=C['bg']).pack(anchor='w', padx=22, pady=(10, 2))
+
+        f = tk.Frame(p, bg='white', padx=22, pady=14); f.pack(fill='x', padx=20, pady=4)
         def _lbl(r, c, t):
             make_label(f, t, size=9, color=C['secondary'], bg='white').grid(row=r, column=c, sticky='w', padx=6, pady=4)
 
