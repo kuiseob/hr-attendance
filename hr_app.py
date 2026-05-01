@@ -595,9 +595,6 @@ class HRApp:
         color_btn(btn_row, "사원 수정", _update, theme='update').pack(side='right', padx=5)
         color_btn(btn_row, "사원 삭제", _delete, theme='delete').pack(side='right', padx=5)
 
-        _reset_bar = tk.Frame(p, bg=C['bg']); _reset_bar.pack(side='bottom', fill='x', padx=20, pady=8)
-        color_btn(_reset_bar, "초기화", _clear, theme='neutral', size=9, padx=10, pady=5).pack(side='right')
-        self.root.bind('<Escape>', lambda e: _clear())
         _load()
 
     # ===========================================
@@ -866,9 +863,6 @@ class HRApp:
         color_btn(btn_row, "근태 수정", _update, theme='update').pack(side='right', padx=5)
         color_btn(btn_row, "근태 삭제", _delete, theme='delete').pack(side='right', padx=5)
 
-        _reset_bar = tk.Frame(p, bg=C['bg']); _reset_bar.pack(side='bottom', fill='x', padx=20, pady=8)
-        color_btn(_reset_bar, "초기화", _clear, theme='neutral', size=9, padx=10, pady=5).pack(side='right')
-        self.root.bind('<Escape>', lambda e: _clear())
         _load()
 
     # ===========================================
@@ -1009,9 +1003,6 @@ class HRApp:
         color_btn(btn_row, "휴가 삭제", _delete, theme='delete').pack(side='right', padx=5)
         color_btn(btn_row, "✓ 승인", _approve, theme='action').pack(side='right', padx=5)
 
-        _reset_bar = tk.Frame(p, bg=C['bg']); _reset_bar.pack(side='bottom', fill='x', padx=20, pady=8)
-        color_btn(_reset_bar, "초기화", _clear, theme='neutral', size=9, padx=10, pady=5).pack(side='right')
-        self.root.bind('<Escape>', lambda e: _clear())
         _load()
 
     # ===========================================
@@ -1186,9 +1177,6 @@ class HRApp:
         color_btn(btn_row, "급여 수정", _update, theme='update').pack(side='right', padx=5)
         color_btn(btn_row, "급여 삭제", _delete, theme='delete').pack(side='right', padx=5)
 
-        _reset_bar = tk.Frame(p, bg=C['bg']); _reset_bar.pack(side='bottom', fill='x', padx=20, pady=8)
-        color_btn(_reset_bar, "초기화", _clear, theme='neutral', size=9, padx=10, pady=5).pack(side='right')
-        self.root.bind('<Escape>', lambda e: _clear())
         _load()
 
 
