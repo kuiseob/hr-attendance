@@ -180,25 +180,44 @@ def make_label(parent, text, bold=False, size=10, color=None, **kw):
                     fg=color or C['text'], **kw)
 
 def make_entry(parent, var, width=18, **kw):
-    return tk.Entry(parent, textvariable=var, font=('Malgun Gothic', 10),
-                    relief='flat', bd=3, bg='#F5F5F5', width=width, **kw)
+    """입력 칸 — 흰색 배경 + 진한 테두리로 명확히 표시."""
+    return tk.Entry(parent, textvariable=var,
+                    font=('Malgun Gothic', 11),
+                    relief='solid', bd=1,
+                    bg='white', fg='#212121',
+                    highlightthickness=2,
+                    highlightbackground='#90A4AE',
+                    highlightcolor=C['primary'],
+                    insertbackground=C['primary'],
+                    width=width, **kw)
 
 def make_combo(parent, var, values, width=18, state='readonly', **kw):
     return ttk.Combobox(parent, textvariable=var, values=values,
-                        font=('Malgun Gothic', 10), width=width, state=state, **kw)
+                        font=('Malgun Gothic', 11), width=width, state=state, **kw)
 
 def setup_treeview_style():
     style = ttk.Style()
     try: style.theme_use('clam')
     except: pass
     style.configure('PM.Treeview', background='white', fieldbackground='white',
-                    foreground=C['text'], rowheight=26, font=('Malgun Gothic', 10))
+                    foreground=C['text'], rowheight=28, font=('Malgun Gothic', 10))
     style.configure('PM.Treeview.Heading', background=C['primary'],
                     foreground='white', font=('Malgun Gothic', 10, 'bold'),
                     padding=6)
     style.map('PM.Treeview',
               background=[('selected', '#BBDEFB')],
               foreground=[('selected', C['text'])])
+    # Combobox 통일 스타일
+    style.configure('TCombobox',
+                    fieldbackground='white', background='white',
+                    foreground='#212121', bordercolor='#90A4AE',
+                    arrowcolor=C['primary'], borderwidth=2,
+                    relief='solid', padding=4)
+    style.map('TCombobox',
+              fieldbackground=[('readonly', 'white'), ('focus', 'white')],
+              bordercolor=[('focus', C['primary'])],
+              lightcolor=[('focus', C['primary'])],
+              darkcolor=[('focus', C['primary'])])
 
 def make_tree(parent, cols, widths, height=12):
     tree = ttk.Treeview(parent, columns=cols, show='headings',
@@ -460,7 +479,7 @@ class HRApp:
         p = self.page_area
         page_header(p, "인사 관리", "  사원 기본정보 — 등록 / 수정 / 삭제")
 
-        f = tk.Frame(p, bg='white', padx=22, pady=14); f.pack(fill='x', padx=20, pady=12)
+        f = tk.Frame(p, bg='white', padx=22, pady=18); f.pack(fill='x', padx=20, pady=12)
         vs = {k: tk.StringVar() for k in
               ('emp_no','name','dept','position','join_date','phone','email','base_salary','status')}
         es = {}
@@ -469,20 +488,20 @@ class HRApp:
             make_label(f, t, size=9, color=C['secondary'], bg='white').grid(
                 row=r, column=c, sticky='w', padx=6, pady=4)
 
-        _lbl(0, 0, "사번 *");   es['emp_no'] = make_entry(f, vs['emp_no'], 14); es['emp_no'].grid(row=0, column=1, padx=4)
-        _lbl(0, 2, "이름 *");   es['name']   = make_entry(f, vs['name'], 14); es['name'].grid(row=0, column=3, padx=4)
+        _lbl(0, 0, "사번 *");   es['emp_no'] = make_entry(f, vs['emp_no'], 14); es['emp_no'].grid(row=0, column=1, padx=4, pady=8)
+        _lbl(0, 2, "이름 *");   es['name']   = make_entry(f, vs['name'], 14); es['name'].grid(row=0, column=3, padx=4, pady=8)
         _lbl(0, 4, "부서");     es['dept']   = make_combo(f, vs['dept'],
-            ['생산팀','품질팀','경영지원','영업팀','연구개발','품질관리'], width=14, state='normal'); es['dept'].grid(row=0, column=5, padx=4)
+            ['생산팀','품질팀','경영지원','영업팀','연구개발','품질관리'], width=14, state='normal'); es['dept'].grid(row=0, column=5, padx=4, pady=8)
         _lbl(0, 6, "직급");     es['position']= make_combo(f, vs['position'],
-            ['사원','대리','과장','차장','부장','이사'], width=10, state='normal'); es['position'].grid(row=0, column=7, padx=4)
+            ['사원','대리','과장','차장','부장','이사'], width=10, state='normal'); es['position'].grid(row=0, column=7, padx=4, pady=8)
 
         _lbl(1, 0, "입사일");   vs['join_date'].set(datetime.now().strftime('%Y-%m-%d'))
-        es['join_date'] = make_entry(f, vs['join_date'], 14); es['join_date'].grid(row=1, column=1, padx=4)
-        _lbl(1, 2, "연락처");   es['phone']  = make_entry(f, vs['phone'], 16); es['phone'].grid(row=1, column=3, padx=4)
+        es['join_date'] = make_entry(f, vs['join_date'], 14); es['join_date'].grid(row=1, column=1, padx=4, pady=8)
+        _lbl(1, 2, "연락처");   es['phone']  = make_entry(f, vs['phone'], 16); es['phone'].grid(row=1, column=3, padx=4, pady=8)
         _lbl(1, 4, "이메일");   es['email']  = make_entry(f, vs['email'], 22); es['email'].grid(row=1, column=5, columnspan=2, padx=4, sticky='w')
-        _lbl(1, 7, "재직상태"); es['status'] = make_combo(f, vs['status'], ['재직','휴직','퇴사'], width=10); es['status'].grid(row=1, column=7, padx=4); vs['status'].set('재직')
+        _lbl(1, 7, "재직상태"); es['status'] = make_combo(f, vs['status'], ['재직','휴직','퇴사'], width=10); es['status'].grid(row=1, column=7, padx=4, pady=8); vs['status'].set('재직')
 
-        _lbl(2, 0, "기본급(원)"); es['base_salary'] = make_entry(f, vs['base_salary'], 14); es['base_salary'].grid(row=2, column=1, padx=4)
+        _lbl(2, 0, "기본급(원)"); es['base_salary'] = make_entry(f, vs['base_salary'], 14); es['base_salary'].grid(row=2, column=1, padx=4, pady=8)
 
         wrap = tk.Frame(p, bg=C['bg']); wrap.pack(fill='both', expand=True, padx=20, pady=6)
         cols = ('사번','이름','부서','직급','입사일','연락처','이메일','기본급','상태')
@@ -720,27 +739,27 @@ class HRApp:
 
         f = tk.Frame(p, bg='white', padx=22, pady=14); f.pack(fill='x', padx=20, pady=4)
         def _lbl(r, c, t):
-            make_label(f, t, size=9, color=C['secondary'], bg='white').grid(row=r, column=c, sticky='w', padx=6, pady=4)
+            make_label(f, t, size=9, color=C['secondary'], bg='white').grid(row=r, column=c, sticky='w', padx=6, pady=10)
 
         _lbl(0, 0, "사원 *")
         emp_v = tk.StringVar()
-        emp_e = make_combo(f, emp_v, emp_disp, width=20); emp_e.grid(row=0, column=1, padx=4)
+        emp_e = make_combo(f, emp_v, emp_disp, width=20); emp_e.grid(row=0, column=1, padx=4, pady=8)
 
         _lbl(0, 2, "근무일 *")
         dt_v = tk.StringVar(value=date.today().isoformat())
-        dt_e = make_entry(f, dt_v, 14); dt_e.grid(row=0, column=3, padx=4)
+        dt_e = make_entry(f, dt_v, 14); dt_e.grid(row=0, column=3, padx=4, pady=8)
 
         _lbl(0, 4, "출근 (HH:MM)")
         in_v = tk.StringVar(value='09:00')
-        in_e = make_entry(f, in_v, 10); in_e.grid(row=0, column=5, padx=4)
+        in_e = make_entry(f, in_v, 10); in_e.grid(row=0, column=5, padx=4, pady=8)
 
         _lbl(0, 6, "퇴근 (HH:MM)")
         out_v = tk.StringVar(value='18:00')
-        out_e = make_entry(f, out_v, 10); out_e.grid(row=0, column=7, padx=4)
+        out_e = make_entry(f, out_v, 10); out_e.grid(row=0, column=7, padx=4, pady=8)
 
         _lbl(1, 0, "상태")
         st_v = tk.StringVar(value='정상')
-        st_e = make_combo(f, st_v, ['정상','지각','조퇴','결근','반차','출장'], width=12); st_e.grid(row=1, column=1, padx=4)
+        st_e = make_combo(f, st_v, ['정상','지각','조퇴','결근','반차','출장'], width=12); st_e.grid(row=1, column=1, padx=4, pady=8)
 
         _lbl(1, 2, "비고")
         m_v = tk.StringVar()
@@ -862,25 +881,25 @@ class HRApp:
         emps = self.db.query("SELECT id,emp_no,name FROM employees WHERE active=1 ORDER BY emp_no")
         emp_disp = [f"{r[1]} {r[2]}" for r in emps]
 
-        f = tk.Frame(p, bg='white', padx=22, pady=14); f.pack(fill='x', padx=20, pady=12)
+        f = tk.Frame(p, bg='white', padx=22, pady=18); f.pack(fill='x', padx=20, pady=12)
         def _lbl(r, c, t):
-            make_label(f, t, size=9, color=C['secondary'], bg='white').grid(row=r, column=c, sticky='w', padx=6, pady=4)
+            make_label(f, t, size=9, color=C['secondary'], bg='white').grid(row=r, column=c, sticky='w', padx=6, pady=10)
 
         _lbl(0, 0, "사원 *")
         emp_v = tk.StringVar()
-        emp_e = make_combo(f, emp_v, emp_disp, width=20); emp_e.grid(row=0, column=1, padx=4)
+        emp_e = make_combo(f, emp_v, emp_disp, width=20); emp_e.grid(row=0, column=1, padx=4, pady=8)
 
         _lbl(0, 2, "구분 *")
         type_v = tk.StringVar(value='연차')
-        type_e = make_combo(f, type_v, ['연차','반차','병가','경조사','휴직','기타'], width=12); type_e.grid(row=0, column=3, padx=4)
+        type_e = make_combo(f, type_v, ['연차','반차','병가','경조사','휴직','기타'], width=12); type_e.grid(row=0, column=3, padx=4, pady=8)
 
         _lbl(0, 4, "시작일 *")
         sd_v = tk.StringVar(value=date.today().isoformat())
-        sd_e = make_entry(f, sd_v, 14); sd_e.grid(row=0, column=5, padx=4)
+        sd_e = make_entry(f, sd_v, 14); sd_e.grid(row=0, column=5, padx=4, pady=8)
 
         _lbl(0, 6, "종료일 *")
         ed_v = tk.StringVar(value=date.today().isoformat())
-        ed_e = make_entry(f, ed_v, 14); ed_e.grid(row=0, column=7, padx=4)
+        ed_e = make_entry(f, ed_v, 14); ed_e.grid(row=0, column=7, padx=4, pady=8)
 
         _lbl(1, 0, "사유")
         rsn_v = tk.StringVar()
@@ -1005,37 +1024,37 @@ class HRApp:
         emps = self.db.query("SELECT id,emp_no,name,base_salary FROM employees WHERE active=1 ORDER BY emp_no")
         emp_disp = [f"{r[1]} {r[2]}" for r in emps]
 
-        f = tk.Frame(p, bg='white', padx=22, pady=14); f.pack(fill='x', padx=20, pady=12)
+        f = tk.Frame(p, bg='white', padx=22, pady=18); f.pack(fill='x', padx=20, pady=12)
         def _lbl(r, c, t):
-            make_label(f, t, size=9, color=C['secondary'], bg='white').grid(row=r, column=c, sticky='w', padx=6, pady=4)
+            make_label(f, t, size=9, color=C['secondary'], bg='white').grid(row=r, column=c, sticky='w', padx=6, pady=10)
 
         _lbl(0, 0, "사원 *")
         emp_v = tk.StringVar()
-        emp_e = make_combo(f, emp_v, emp_disp, width=20); emp_e.grid(row=0, column=1, padx=4)
+        emp_e = make_combo(f, emp_v, emp_disp, width=20); emp_e.grid(row=0, column=1, padx=4, pady=8)
 
         _lbl(0, 2, "급여월 *")
         pm_v = tk.StringVar(value=date.today().strftime('%Y-%m'))
-        pm_e = make_entry(f, pm_v, 12); pm_e.grid(row=0, column=3, padx=4)
+        pm_e = make_entry(f, pm_v, 12); pm_e.grid(row=0, column=3, padx=4, pady=8)
 
         _lbl(0, 4, "지급일")
         pd_v = tk.StringVar(value=date.today().isoformat())
-        pd_e = make_entry(f, pd_v, 14); pd_e.grid(row=0, column=5, padx=4)
+        pd_e = make_entry(f, pd_v, 14); pd_e.grid(row=0, column=5, padx=4, pady=8)
 
         _lbl(1, 0, "기본급(원)")
         base_v = tk.StringVar(value='0')
-        base_e = make_entry(f, base_v, 14); base_e.grid(row=1, column=1, padx=4)
+        base_e = make_entry(f, base_v, 14); base_e.grid(row=1, column=1, padx=4, pady=8)
 
         _lbl(1, 2, "초과수당")
         ot_v = tk.StringVar(value='0')
-        ot_e = make_entry(f, ot_v, 14); ot_e.grid(row=1, column=3, padx=4)
+        ot_e = make_entry(f, ot_v, 14); ot_e.grid(row=1, column=3, padx=4, pady=8)
 
         _lbl(1, 4, "상여금")
         bn_v = tk.StringVar(value='0')
-        bn_e = make_entry(f, bn_v, 14); bn_e.grid(row=1, column=5, padx=4)
+        bn_e = make_entry(f, bn_v, 14); bn_e.grid(row=1, column=5, padx=4, pady=8)
 
         _lbl(1, 6, "공제(세금/4대보험)")
         ded_v = tk.StringVar(value='0')
-        ded_e = make_entry(f, ded_v, 14); ded_e.grid(row=1, column=7, padx=4)
+        ded_e = make_entry(f, ded_v, 14); ded_e.grid(row=1, column=7, padx=4, pady=8)
 
         _lbl(2, 0, "비고")
         m_v = tk.StringVar()
