@@ -1074,13 +1074,12 @@ class HRApp:
                            fg=C['primary'], bg='white')
         net_lbl.grid(row=2, column=5, columnspan=3, sticky='e', padx=10)
 
-        # 사원 선택 시 기본급 자동 채움
-        def _on_emp(e=None):
-            if emp_v.get() in emp_disp:
-                idx = emp_disp.index(emp_v.get())
-                base_v.set(str(int(emps[idx][3] or 0)))
-                _calc()
-        emp_e.bind('<<ComboboxSelected>>', _on_emp)
+        # 근태 자동 집계 표시
+        att_info = tk.Label(f, text="",
+                            font=('Malgun Gothic', 10),
+                            fg='#37474F', bg='#E0F2F1',
+                            padx=12, pady=8, anchor='w', justify='left')
+        att_info.grid(row=3, column=0, columnspan=8, sticky='ew', pady=(8, 4))
 
         def _calc(*_):
             try:
@@ -1089,6 +1088,74 @@ class HRApp:
                 net = b + o + bn - d
                 net_lbl.config(text=f"실수령액: {int(net):,}원")
             except: pass
+
+        def _auto_calc_from_attendance():
+            """선택한 사원 + 급여월 → 근태 데이터로 자동 계산."""
+            if emp_v.get() not in emp_disp:
+                att_info.config(text="(사원을 선택하면 근태 자동 집계됩니다)"); return
+            idx = emp_disp.index(emp_v.get())
+            emp_id = emps[idx][0]
+            base_salary = float(emps[idx][3] or 0)
+            ym = (pm_v.get() or '').strip()
+            if not ym or len(ym) < 7:
+                att_info.config(text="(급여월 형식: YYYY-MM)"); return
+
+            # 해당 월의 근태 집계
+            rows = self.db.query("""
+                SELECT COUNT(*),
+                       COALESCE(SUM(work_hours), 0),
+                       COALESCE(SUM(overtime_hours), 0),
+                       SUM(CASE WHEN status='결근' THEN 1 ELSE 0 END),
+                       SUM(CASE WHEN status='지각' THEN 1 ELSE 0 END),
+                       SUM(CASE WHEN status='반차' THEN 1 ELSE 0 END)
+                FROM attendance
+                WHERE emp_id=? AND substr(work_date,1,7)=?
+            """, (emp_id, ym))
+            r = rows[0] if rows else (0, 0, 0, 0, 0, 0)
+            work_days = r[0] or 0
+            total_hours = r[1] or 0
+            ot_hours = r[2] or 0
+            absent = r[3] or 0
+            late = r[4] or 0
+            half = r[5] or 0
+
+            # 시급 = 기본급 / (월 209시간 표준)
+            hourly = base_salary / 209 if base_salary > 0 else 0
+            # 초과수당 = 초과시간 × 시급 × 1.5
+            ot_pay = round(ot_hours * hourly * 1.5)
+            # 결근 차감 = 일급 × 결근일수 (반차는 0.5일)
+            daily = base_salary / 22 if base_salary > 0 else 0  # 월 22일 가정
+            absent_deduct = round(daily * (absent + half * 0.5))
+            # 지각 차감 = 시급 × 0.5h × 지각횟수 (가벼운 페널티)
+            late_deduct = round(hourly * 0.5 * late)
+            # 4대보험 표준 약 9.4% (국민 4.5 + 건강 3.4 + 고용 0.9 + 산재 등)
+            insurance = round(base_salary * 0.094)
+            # 소득세 약 3% (간이 추정)
+            tax = round(base_salary * 0.03)
+            # 총 공제 = 보험 + 세금 + 결근/지각 차감
+            total_ded = insurance + tax + absent_deduct + late_deduct
+
+            # 폼에 자동 입력
+            base_v.set(str(int(base_salary)))
+            ot_v.set(str(int(ot_pay)))
+            ded_v.set(str(int(total_ded)))
+
+            # 상세 표시
+            att_info.config(text=(
+                f"📊 {ym} 근태 자동 집계 — "
+                f"근무일 {work_days}일 / 총 {total_hours:.1f}h / 초과 {ot_hours:.1f}h"
+                f" / 결근 {absent}일, 지각 {late}회, 반차 {half}회\n"
+                f"💰 자동 산출 — 시급 {int(hourly):,}원 / 초과수당 {int(ot_pay):,}원"
+                f" / 보험 {int(insurance):,}원 + 세금 {int(tax):,}원"
+                f" + 결근차감 {int(absent_deduct):,}원 + 지각차감 {int(late_deduct):,}원"
+                f" = 공제 {int(total_ded):,}원"))
+            _calc()
+
+        # 사원 선택 또는 급여월 변경 시 자동 재계산
+        def _on_change(*_):
+            _auto_calc_from_attendance()
+        emp_e.bind('<<ComboboxSelected>>', _on_change)
+        pm_v.trace_add('write', _on_change)
         for v in (base_v, ot_v, bn_v, ded_v): v.trace_add('write', _calc)
 
         wrap = tk.Frame(p, bg=C['bg']); wrap.pack(fill='both', expand=True, padx=20, pady=6)
@@ -1190,10 +1257,13 @@ class HRApp:
             _clear(); _load()
 
         btn_row = tk.Frame(f, bg='white')
-        btn_row.grid(row=3, column=0, columnspan=8, sticky='e', pady=(12, 0))
+        btn_row.grid(row=4, column=0, columnspan=8, sticky='e', pady=(12, 0))
         color_btn(btn_row, "급여 등록", _save_new, theme='save').pack(side='right', padx=5)
         color_btn(btn_row, "급여 수정", _update, theme='update').pack(side='right', padx=5)
         color_btn(btn_row, "급여 삭제", _delete, theme='delete').pack(side='right', padx=5)
+        color_btn(btn_row, "🔄 근태 자동 계산",
+                  lambda: _auto_calc_from_attendance(),
+                  theme='action').pack(side='right', padx=5)
 
         _load()
 
