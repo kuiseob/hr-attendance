@@ -483,7 +483,7 @@ class HRApp:
         page_header(p, "대시보드", "  인사 / 근태 / 휴가 / 급여 요약")
 
         # 통계 카드
-        cards = tk.Frame(p, bg='white', padx=20, pady=12); cards.pack(fill='x', pady=(0, 12))
+        cards = tk.Frame(p, bg='white', padx=20, pady=8); cards.pack(fill='x', pady=(0, 12))
         today = date.today().isoformat()
         ym = date.today().strftime('%Y-%m')
 
@@ -532,7 +532,7 @@ class HRApp:
         p = self.page_area
         page_header(p, "인사 관리", "  사원 기본정보 — 등록 / 수정 / 삭제")
 
-        f = tk.Frame(p, bg='white', padx=20, pady=12); f.pack(fill='x', pady=(0, 12))
+        f = tk.Frame(p, bg='white', padx=20, pady=8); f.pack(fill='x', pady=(0, 12))
         vs = {k: tk.StringVar() for k in
               ('emp_no','name','dept','position','join_date','phone','email','base_salary','status')}
         es = {}
@@ -661,7 +661,7 @@ class HRApp:
         emp_disp = [f"{r[1]} {r[2]}" for r in emps]
 
         # 시계 위젯 (상단)
-        clock_frame = tk.Frame(p, bg='white', padx=20, pady=12)
+        clock_frame = tk.Frame(p, bg='white', padx=20, pady=8)
         clock_frame.pack(fill='x', pady=(0, 12))
 
         clock_widget = tk.Frame(clock_frame, bg='white', relief='solid', bd=2,
@@ -730,7 +730,7 @@ class HRApp:
         _tick_clock()
 
         # 출근/퇴근 자동 기록 패널
-        action_frame = tk.Frame(p, bg='white', padx=20, pady=12)
+        action_frame = tk.Frame(p, bg='white', padx=20, pady=8)
         action_frame.pack(fill='x', pady=(0, 12))
 
         # 사원 선택
@@ -848,7 +848,7 @@ class HRApp:
                  font=('Malgun Gothic', 11, 'bold'),
                  fg=C['secondary'], bg=C['bg']).pack(anchor='w', padx=22, pady=(0, 2))
 
-        f = tk.Frame(p, bg='white', padx=22, pady=14); f.pack(fill='x', padx=20, pady=(0, 4))
+        f = tk.Frame(p, bg='white', padx=20, pady=8); f.pack(fill='x', pady=(0, 4))
         def _lbl(r, c, t):
             make_label(f, t, size=9, color=C['secondary'], bg='white').grid(row=r, column=c, sticky='w', padx=6, pady=10)
 
@@ -1087,7 +1087,7 @@ class HRApp:
         emps = self.db.query("SELECT id,emp_no,name FROM employees WHERE active=1 ORDER BY emp_no")
         emp_disp = [f"{r[1]} {r[2]}" for r in emps]
 
-        f = tk.Frame(p, bg='white', padx=20, pady=12); f.pack(fill='x', pady=(0, 12))
+        f = tk.Frame(p, bg='white', padx=20, pady=8); f.pack(fill='x', pady=(0, 12))
         def _lbl(r, c, t):
             make_label(f, t, size=9, color=C['secondary'], bg='white').grid(row=r, column=c, sticky='w', padx=6, pady=10)
 
@@ -1228,7 +1228,7 @@ class HRApp:
         emp_disp = [f"{r[1]} {r[2]}" for r in emps]
 
         # ─ 사원 정보 & 기본급
-        f = tk.Frame(p, bg='white', padx=20, pady=12); f.pack(fill='x', pady=(0, 12))
+        f = tk.Frame(p, bg='white', padx=20, pady=8); f.pack(fill='x', pady=(0, 12))
         def _lbl(r, c, t):
             make_label(f, t, size=9, color=C['secondary'], bg='white').grid(row=r, column=c, sticky='w', padx=6, pady=6)
 
@@ -1486,7 +1486,7 @@ class HRApp:
         page_header(p, "통계 관리", "  월별 근무시간 요약")
 
         # 월 선택 패널
-        month_frame = tk.Frame(p, bg='white', padx=20, pady=12)
+        month_frame = tk.Frame(p, bg='white', padx=20, pady=8)
         month_frame.pack(fill='x', pady=(0, 12))
 
         today = date.today()
