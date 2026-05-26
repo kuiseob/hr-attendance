@@ -426,8 +426,8 @@ class HRApp:
             None,
         ]
 
-        tk.Label(sb, text="MENU", font=('Malgun Gothic', 11, 'bold'),
-                 fg='#78909C', bg=C['sidebar_bg']).pack(pady=(0, 2))
+        tk.Label(sb, text="MENU", font=('Malgun Gothic', 18, 'bold'),
+                 fg='#78909C', bg=C['sidebar_bg']).pack(pady=(0, 0))
 
         self._sb_btns = {}; self._sb_meta = {}
         for item in menus:
