@@ -12,7 +12,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 import sqlite3, os, sys
-from datetime import datetime, date, timedelta
+from datetime import datetime, date, timedelta, time
 
 COMPANY = "SEO JIN PRECISION CO."
 
@@ -292,14 +292,19 @@ def fill_tree(tree, rows, tag_fn=None):
         tree.insert('', 'end', values=tuple(row), tags=(tag,))
 
 def page_header(parent, title, sub=''):
-    # No spacer frame - direct title pack at top
-    f = tk.Frame(parent, bg='white'); f.pack(fill='x', pady=(0, 0))
-    tk.Label(f, text=title, font=('Malgun Gothic', 18, 'bold'),
-             fg=C['primary'], bg='white').pack(side='left', padx=24, pady=(0, 2))
+    # Add 24px spacer frame to align with left sidebar MENU label
+    # Using explicit Frame height ensures reliable spacing
+    spacer = tk.Frame(parent, bg='white', height=24)
+    spacer.pack(fill='x')
+    spacer.pack_propagate(False)
+
+    tk.Label(parent, text=title, font=('Malgun Gothic', 18, 'bold'),
+             fg=C['primary'], bg='white').pack(anchor='nw', padx=24, pady=(0, 0))
     if sub:
-        tk.Label(f, text=sub, font=('Malgun Gothic', 10),
-                 fg=C['secondary'], bg='white').pack(side='left', pady=(0, 2))
-    tk.Frame(parent, bg=C['primary'], height=2).pack(fill='x')
+        tk.Label(parent, text=sub, font=('Malgun Gothic', 10),
+                 fg=C['secondary'], bg='white').pack(anchor='nw', padx=24, pady=(0, 4))
+    # Divider
+    tk.Frame(parent, bg=C['primary'], height=2).pack(fill='x', anchor='nw', pady=(4, 0))
 
 
 # ────────────────────────────────────────
@@ -360,6 +365,7 @@ class HRApp:
     def _show_main(self):
         for w in self.root.winfo_children(): w.destroy()
         self.root.geometry("1340x820")
+        self.root.configure(bg='white')  # 배경을 white로 완전히 덮기
         self.root.resizable(True, True)
 
         self._build_header()
@@ -382,15 +388,19 @@ class HRApp:
         canvas.grid(row=0, column=0, sticky='nsew')
 
         self.page_area = tk.Frame(canvas, bg='white')
+        canvas.delete('all')  # 기존 canvas items 완전 제거
+
+        # Simplest possible approach: just position page_area at y=0 normally
         self._page_window = canvas.create_window((0, 0), window=self.page_area, anchor='nw')
         self._page_canvas = canvas
 
-        def _on_inner(e): canvas.configure(scrollregion=canvas.bbox('all'))
         def _on_canvas(e):
             iw = self.page_area.winfo_reqwidth()
-            canvas.itemconfig(self._page_window, width=max(e.width, iw))
-        self.page_area.bind('<Configure>', _on_inner)
+            ih = self.page_area.winfo_reqheight()
+            canvas.itemconfig(self._page_window, width=max(e.width, iw), height=ih)
+
         canvas.bind('<Configure>', _on_canvas)
+
         def _on_wheel(e):
             d = -int(e.delta) if sys.platform == 'darwin' else -int(e.delta/120)
             canvas.yview_scroll(d, 'units')
@@ -399,6 +409,16 @@ class HRApp:
         canvas.bind_all('<Button-5>', lambda e: canvas.yview_scroll(1, 'units'))
 
         self._nav('dashboard')
+
+        # 페이지가 완전히 로드된 후 scrollregion 설정 (중복 방지)
+        def _set_scrollregion():
+            bbox = canvas.bbox('all')
+            if bbox:
+                x1, y1, x2, y2 = bbox
+                # Ensure scrollregion starts at y=0 (to show the 24px offset space)
+                canvas.configure(scrollregion=(0, 0, x2, y2))
+            canvas.yview_moveto(0)
+        self.root.after(50, _set_scrollregion)
 
     def _build_header(self):
         hdr = tk.Frame(self.root, bg=C['header_bg'], height=56); hdr.pack(fill='x'); hdr.pack_propagate(False)
@@ -437,7 +457,7 @@ class HRApp:
         menu_frame.pack(fill='x')
         menu_frame.pack_propagate(False)
         tk.Label(menu_frame, text="MENU", font=('Malgun Gothic', 18, 'bold'),
-                 fg='#78909C', bg=C['sidebar_bg']).pack(pady=(0, 0))
+                 fg='#78909C', bg=C['sidebar_bg']).pack(anchor='nw', pady=(0, 0))
 
         self._sb_btns = {}; self._sb_meta = {}
         for item in menus:
@@ -473,8 +493,6 @@ class HRApp:
             else:
                 b.config(bg=C['sidebar_bg'], fg='#000000'); bar.config(bg=C['sidebar_bg'])
         for w in self.page_area.winfo_children(): w.destroy()
-        if hasattr(self, '_page_canvas'):
-            self._page_canvas.yview_moveto(0); self._page_canvas.xview_moveto(0)
         pages = {
             'dashboard':  self._pg_dashboard,
             'employees':  self._pg_employees,
@@ -839,11 +857,17 @@ class HRApp:
                 messagebox.showwarning("퇴근",
                     f"오늘 이미 퇴근했습니다.\n퇴근시각: {rec[2]}"); return
             now_s = datetime.now().strftime('%H:%M')
-            wh, ot = _calc(rec[1], now_s)
-            self.db.execute("""UPDATE attendance SET check_out=?, work_hours=?, overtime_hours=?
-                               WHERE id=?""", (now_s, wh, ot, rec[0]))
+            today_s = date.today().isoformat()
+            # _calc_hours() 사용: (base, ot, night, special, is_night_special)
+            wh, ot, nh, sh, is_ns = _calc_hours(rec[1], now_s, today_s)
+            memo = ""
+            if is_ns:
+                memo = "야간특근"
+            self.db.execute("""UPDATE attendance SET check_out=?, work_hours=?, overtime_hours=?,
+                               night_hours=?, special_hours=?, memo=?
+                               WHERE id=?""", (now_s, wh, ot, nh, sh, memo, rec[0]))
             messagebox.showinfo("퇴근 완료",
-                f"✅ 퇴근 시각: {now_s}\n근무 {wh}h / 초과 {ot}h")
+                f"✅ 퇴근 시각: {now_s}\n근무 {wh}h / 초과 {ot}h / 야간 {nh}h")
             _load()
 
         # 출근/퇴근 버튼
@@ -918,79 +942,108 @@ class HRApp:
             return (v.get() or default).strip()
 
         def _calc_hours(ci, co, work_date=None):
+            """
+            근무 시간 계산 (정상근무/초과/야간/특근)
+            Returns: (base_hours, overtime_hours, night_hours, special_hours, is_night_special)
+            """
             try:
                 fmt = '%H:%M'
                 ci_time = datetime.strptime(ci, fmt)
                 co_time = datetime.strptime(co, fmt)
 
-                reg_start = datetime.strptime('08:30', fmt)   # 정상근무 시작
-                reg_end = datetime.strptime('17:30', fmt)     # 정상근무 종료
-                ot_end = datetime.strptime('22:00', fmt)      # 초과근무 종료
-                night_start = datetime.strptime('22:00', fmt) # 야간근무 시작
-                night_end = datetime.strptime('05:30', fmt)   # 야간근무 종료
+                # 시간 경계선
+                reg_start = datetime.strptime('08:30', fmt)   # 정상근무 08:30-17:30
+                reg_end = datetime.strptime('17:30', fmt)
+                ot_end = datetime.strptime('22:00', fmt)      # 초과근무 17:30-22:00
+                night_start = datetime.strptime('22:00', fmt) # 야간근무 22:00-05:30
+                night_end = datetime.strptime('05:30', fmt)
 
                 # 출근시간 08:30 이전이면 08:30으로 조정
                 if ci_time < reg_start:
                     ci_time = reg_start
 
+                # 퇴근 시간이 입근시간보다 빠르면 다음날로 간주 (야간근무)
+                if co_time <= ci_time and co_time < night_start:
+                    co_time = co_time + timedelta(days=1)
+
                 # 휴일/주말 여부 판단
-                is_special = False
+                is_special_day = False
                 if work_date:
                     try:
                         wd = datetime.strptime(work_date, '%Y-%m-%d')
                         m, d = wd.month, wd.day
                         is_holiday = (m, d) in self.holidays
                         is_weekend = wd.weekday() >= 5  # 토요일(5) 이상
-                        is_special = is_holiday or is_weekend
+                        is_special_day = is_holiday or is_weekend
                     except:
                         pass
 
                 base_h = ot_h = night_h = sp_h = 0.0
                 is_night_special = False
 
-                if is_special:
-                    # 주말/공휴일: 주간(08:30-22:00)은 특근, 야간(22:00-05:30)은 야간특근
+                if is_special_day:
+                    # ===== 주말/공휴일 =====
+                    # 주간(08:30-22:00): 특근 (1시간 break)
+                    # 야간(22:00-05:30): 야간특근 (break 없음)
+
                     if co_time <= night_start:
                         # 주간만 근무
                         sp_h = (co_time - ci_time).total_seconds() / 3600
-                        if sp_h > 4: sp_h -= 1.0
+                        if sp_h > 4:
+                            sp_h -= 1.0
                     else:
                         # 주간 + 야간 근무
                         day_h = (night_start - ci_time).total_seconds() / 3600
-                        if day_h > 4: day_h -= 1.0
-                        sp_h = day_h
-                        night_h = (co_time - night_start).total_seconds() / 3600
+                        if day_h > 4:
+                            day_h -= 1.0
+                        sp_h = max(0, day_h)
+
+                        night_h = (co_time - night_start).total_seconds() / 3600  # break 없음
                         is_night_special = True
+
                 else:
-                    # 평일: 정상(08:30-17:30), 초과(17:30-22:00), 야간(22:00-05:30)
+                    # ===== 평일 (정상/초과/야간 구분) =====
+
                     if ci_time >= night_start:
-                        # 야간근무만
+                        # 야간근무만 (22:00 이후 입근)
                         night_h = (co_time - ci_time).total_seconds() / 3600
-                        if night_h < 0: night_h += 24
+
                     elif co_time <= reg_end:
                         # 정상근무만 (08:30-17:30)
                         base_h = (co_time - ci_time).total_seconds() / 3600
-                        if base_h > 4: base_h -= 1.0
+                        if base_h > 4:
+                            base_h -= 1.0  # 1시간 break
                         base_h = min(base_h, 8.0)
+
                     elif co_time <= night_start:
-                        # 정상 + 초과 (08:30-22:00 사이)
+                        # 정상 + 초과 (08:30-22:00)
                         # 정상 부분 (08:30-17:30)
                         base_h = (reg_end - ci_time).total_seconds() / 3600
-                        if base_h > 4: base_h -= 1.0
+                        if base_h > 4:
+                            base_h -= 1.0
                         base_h = min(base_h, 8.0)
+
                         # 초과 부분 (17:30-퇴근)
                         ot_h = (co_time - reg_end).total_seconds() / 3600
-                        if ot_h > 4: ot_h -= 0.5
+                        if ot_h > 4:
+                            ot_h -= 0.5  # 0.5시간 break
+                        ot_h = min(ot_h, 4.0)
+
                     else:
                         # 정상 + 초과 + 야간 (22:00 이후 퇴근)
                         # 정상 부분 (08:30-17:30)
                         base_h = (reg_end - ci_time).total_seconds() / 3600
-                        if base_h > 4: base_h -= 1.0
+                        if base_h > 4:
+                            base_h -= 1.0
                         base_h = min(base_h, 8.0)
+
                         # 초과 부분 (17:30-22:00)
                         ot_h = (night_start - reg_end).total_seconds() / 3600
-                        if ot_h > 4: ot_h -= 0.5
-                        # 야간 부분 (22:00-퇴근)
+                        if ot_h > 4:
+                            ot_h -= 0.5
+                        ot_h = min(ot_h, 4.0)
+
+                        # 야간 부분 (22:00-퇴근) - break 없음
                         night_h = (co_time - night_start).total_seconds() / 3600
 
                 return round(base_h, 2), round(ot_h, 2), round(night_h, 2), round(sp_h, 2), is_night_special
