@@ -292,14 +292,8 @@ def fill_tree(tree, rows, tag_fn=None):
         tree.insert('', 'end', values=tuple(row), tags=(tag,))
 
 def page_header(parent, title, sub=''):
-    # Add 24px spacer frame to align with left sidebar MENU label
-    # Using explicit Frame height ensures reliable spacing
-    spacer = tk.Frame(parent, bg='white', height=24)
-    spacer.pack(fill='x')
-    spacer.pack_propagate(False)
-
     tk.Label(parent, text=title, font=('Malgun Gothic', 18, 'bold'),
-             fg=C['primary'], bg='white').pack(anchor='nw', padx=24, pady=(0, 0))
+             fg=C['primary'], bg='white').pack(anchor='nw', padx=24, pady=(24, 0))
     if sub:
         tk.Label(parent, text=sub, font=('Malgun Gothic', 10),
                  fg=C['secondary'], bg='white').pack(anchor='nw', padx=24, pady=(0, 4))
@@ -369,12 +363,12 @@ class HRApp:
         self.root.resizable(True, True)
 
         self._build_header()
-        content = tk.Frame(self.root, bg='white'); content.pack(fill='both', expand=True)
+        content = tk.Frame(self.root, bg='white'); content.pack(fill='both', expand=True, anchor='nw')
         self._build_sidebar(content)
 
         # 페이지 영역 (스크롤)
         scroll_wrap = tk.Frame(content, bg='white')
-        scroll_wrap.pack(side='left', fill='both', expand=True)
+        scroll_wrap.pack(side='left', fill='both', expand=True, anchor='nw')
 
         # grid를 사용하여 canvas와 vbar를 정확히 상단에 정렬
         scroll_wrap.grid_rowconfigure(0, weight=1)
@@ -396,8 +390,7 @@ class HRApp:
 
         def _on_canvas(e):
             iw = self.page_area.winfo_reqwidth()
-            ih = self.page_area.winfo_reqheight()
-            canvas.itemconfig(self._page_window, width=max(e.width, iw), height=ih)
+            canvas.itemconfig(self._page_window, width=max(e.width, iw))
 
         canvas.bind('<Configure>', _on_canvas)
 
