@@ -431,8 +431,12 @@ class HRApp:
             None,
         ]
 
-        tk.Label(sb, text="MENU", font=('Malgun Gothic', 18, 'bold'),
-                 fg='#78909C', bg=C['sidebar_bg']).pack(pady=(0, 0))
+        # MENU 라벨을 Frame으로 감싸서 정확한 높이(24px) 제어
+        menu_frame = tk.Frame(sb, bg=C['sidebar_bg'], height=24)
+        menu_frame.pack(fill='x')
+        menu_frame.pack_propagate(False)
+        tk.Label(menu_frame, text="MENU", font=('Malgun Gothic', 18, 'bold'),
+                 fg='#78909C', bg=C['sidebar_bg']).pack(side='left', padx=22)
 
         self._sb_btns = {}; self._sb_meta = {}
         for item in menus:
