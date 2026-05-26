@@ -292,9 +292,8 @@ def fill_tree(tree, rows, tag_fn=None):
         tree.insert('', 'end', values=tuple(row), tags=(tag,))
 
 def page_header(parent, title, sub=''):
-    # 좌측 메뉴 MENU와 첫 번째 버튼의 시작점을 맞추기 위한 상단 여백
-    # MENU 라벨 높이(24px)만 필요
-    spacer = tk.Frame(parent, bg='white', height=24)
+    # Align with left sidebar MENU label height
+    spacer = tk.Frame(parent, bg='white', height=22)
     spacer.pack(fill='x')
     spacer.pack_propagate(False)
 
@@ -373,7 +372,7 @@ class HRApp:
 
         # 페이지 영역 (스크롤)
         scroll_wrap = tk.Frame(content, bg='white')
-        scroll_wrap.pack(side='left', fill='both', expand=True)
+        scroll_wrap.pack(side='left', fill='both', expand=True, anchor='nw')
         vbar = ttk.Scrollbar(scroll_wrap, orient='vertical')
         canvas = tk.Canvas(scroll_wrap, bg='white', highlightthickness=0,
                            borderwidth=0, yscrollcommand=vbar.set)
