@@ -378,7 +378,7 @@ class HRApp:
                            borderwidth=0, yscrollcommand=vbar.set)
         vbar.config(command=canvas.yview)
         vbar.pack(side='right', fill='y')
-        canvas.pack(side='left', fill='both', expand=True)
+        canvas.pack(side='left', fill='both', expand=True, anchor='nw')
 
         self.page_area = tk.Frame(canvas, bg='white')
         self._page_window = canvas.create_window((0, 0), window=self.page_area, anchor='nw')
