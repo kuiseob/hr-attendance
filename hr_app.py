@@ -292,11 +292,7 @@ def fill_tree(tree, rows, tag_fn=None):
         tree.insert('', 'end', values=tuple(row), tags=(tag,))
 
 def page_header(parent, title, sub=''):
-    # Align with left sidebar MENU label height (18pt font ≈ 24px)
-    spacer = tk.Frame(parent, bg='white', height=24)
-    spacer.pack(fill='x')
-    spacer.pack_propagate(False)
-
+    # No spacer frame - direct title pack at top
     f = tk.Frame(parent, bg='white'); f.pack(fill='x', pady=(0, 0))
     tk.Label(f, text=title, font=('Malgun Gothic', 18, 'bold'),
              fg=C['primary'], bg='white').pack(side='left', padx=24, pady=(0, 2))
