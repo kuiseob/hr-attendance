@@ -293,7 +293,7 @@ def fill_tree(tree, rows, tag_fn=None):
 
 def page_header(parent, title, sub=''):
     tk.Label(parent, text=title, font=('Malgun Gothic', 18, 'bold'),
-             fg=C['primary'], bg='white').pack(anchor='nw', padx=24, pady=(24, 0))
+             fg=C['primary'], bg='white').pack(anchor='nw', padx=24, pady=(0, 0))
     if sub:
         tk.Label(parent, text=sub, font=('Malgun Gothic', 10),
                  fg=C['secondary'], bg='white').pack(anchor='nw', padx=24, pady=(0, 4))
@@ -370,12 +370,20 @@ class HRApp:
         scroll_wrap = tk.Frame(content, bg='white')
         scroll_wrap.pack(side='left', fill='both', expand=True, anchor='nw')
 
-        # grid를 사용하여 canvas와 vbar를 정확히 상단에 정렬
-        scroll_wrap.grid_rowconfigure(0, weight=1)
-        scroll_wrap.grid_columnconfigure(0, weight=1)
+        # 상단 패딩 프레임 (MENU 라벨 높이와 동일)
+        top_pad = tk.Frame(scroll_wrap, bg='white', height=24)
+        top_pad.pack(fill='x')
+        top_pad.pack_propagate(False)
 
-        vbar = ttk.Scrollbar(scroll_wrap, orient='vertical')
-        canvas = tk.Canvas(scroll_wrap, bg='white', highlightthickness=0,
+        # grid를 사용하여 canvas와 vbar를 정확히 상단에 정렬
+        scroll_wrap_inner = tk.Frame(scroll_wrap, bg='white')
+        scroll_wrap_inner.pack(fill='both', expand=True)
+
+        scroll_wrap_inner.grid_rowconfigure(0, weight=1)
+        scroll_wrap_inner.grid_columnconfigure(0, weight=1)
+
+        vbar = ttk.Scrollbar(scroll_wrap_inner, orient='vertical')
+        canvas = tk.Canvas(scroll_wrap_inner, bg='white', highlightthickness=0,
                            borderwidth=0, yscrollcommand=vbar.set)
         vbar.config(command=canvas.yview)
         vbar.grid(row=0, column=1, sticky='ns')
