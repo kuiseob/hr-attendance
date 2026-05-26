@@ -298,7 +298,7 @@ def page_header(parent, title, sub=''):
     if sub:
         tk.Label(f, text=sub, font=('Malgun Gothic', 10),
                  fg=C['secondary'], bg='white').pack(side='left', pady=(0, 2))
-    tk.Frame(parent, bg=C['primary'], height=2).pack(fill='x')
+    tk.Frame(parent, bg=C['primary'], height=8).pack(fill='x')
 
 
 # ────────────────────────────────────────
