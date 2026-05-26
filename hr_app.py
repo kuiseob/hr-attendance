@@ -292,18 +292,13 @@ def fill_tree(tree, rows, tag_fn=None):
         tree.insert('', 'end', values=tuple(row), tags=(tag,))
 
 def page_header(parent, title, sub=''):
-    # ⭐ 핵심: canvas 상단의 top_pad와 맞추기 위해 명시적 24px 스페이서
-    header_spacer = tk.Frame(parent, bg='white', height=24)
-    header_spacer.pack_propagate(False)
-    header_spacer.pack(fill='x')
-
-    tk.Label(parent, text=title, font=('Malgun Gothic', 18, 'bold'),
-             fg=C['primary'], bg='white').pack(anchor='nw', padx=24, pady=(0, 0))
+    # 페이지 제목 (사이드바 첫 번째 메뉴 버튼과 Y축 정렬)
+    tk.Label(parent, text=title, font=('Malgun Gothic', 14, 'bold'),
+             fg=C['primary'], bg='white').pack(anchor='nw', padx=24, pady=(4, 2))
+    tk.Frame(parent, bg=C['primary'], height=2).pack(fill='x', anchor='nw')
     if sub:
         tk.Label(parent, text=sub, font=('Malgun Gothic', 10),
-                 fg=C['secondary'], bg='white').pack(anchor='nw', padx=24, pady=(0, 4))
-    # Divider
-    tk.Frame(parent, bg=C['primary'], height=2).pack(fill='x', anchor='nw', pady=(4, 0))
+                 fg=C['secondary'], bg='white').pack(anchor='nw', padx=24, pady=(4, 0))
 
 
 # ────────────────────────────────────────
@@ -364,53 +359,48 @@ class HRApp:
     def _show_main(self):
         for w in self.root.winfo_children(): w.destroy()
         self.root.geometry("1340x820")
-        self.root.configure(bg='white')  # 배경을 white로 완전히 덮기
+        self.root.configure(bg='white')
         self.root.resizable(True, True)
 
         self._build_header()
-        content = tk.Frame(self.root, bg='white'); content.pack(fill='both', expand=True, anchor='nw')
+        content = tk.Frame(self.root, bg='white')
+        content.pack(fill='both', expand=True)
+
         self._build_sidebar(content)
 
-        # 페이지 영역 (스크롤) - Canvas 대신 Frame + Scrollbar 사용
-        scroll_wrap = tk.Frame(content, bg='white')
-        scroll_wrap.pack(side='left', fill='both', expand=True, anchor='nw')
+        # 우측 스크롤 영역 — sidebar 바로 오른쪽에 직접 배치
+        right = tk.Frame(content, bg='white')
+        right.pack(side='left', fill='both', expand=True)
 
-        # 상단 패딩 프레임 - ⭐ 핵심! (MENU 라벨 높이와 정확히 동일)
-        top_pad = tk.Frame(scroll_wrap, bg='white', height=24)
-        top_pad.pack_propagate(False)
-        top_pad.pack(fill='x')
+        vbar = ttk.Scrollbar(right, orient='vertical')
+        vbar.pack(side='right', fill='y')
 
-        # 스크롤 컨테이너 (frame + canvas + scrollbar)
-        scroll_container = tk.Frame(scroll_wrap, bg='white')
-        scroll_container.pack(fill='both', expand=True)
-
-        scroll_container.grid_rowconfigure(0, weight=1)
-        scroll_container.grid_columnconfigure(0, weight=1)
-
-        # Canvas와 Scrollbar
-        vbar = ttk.Scrollbar(scroll_container, orient='vertical')
-        canvas = tk.Canvas(scroll_container, bg='white', highlightthickness=0,
+        canvas = tk.Canvas(right, bg='white', highlightthickness=0,
                            borderwidth=0, yscrollcommand=vbar.set)
         vbar.config(command=canvas.yview)
-        vbar.grid(row=0, column=1, sticky='ns')
-        canvas.grid(row=0, column=0, sticky='nsew')
+        canvas.pack(side='left', fill='both', expand=True)
 
-        # page_area를 canvas 내부에 생성 (y=0에 정확히 배치)
+        # page_area: canvas 내부 (0, 0) 에 anchor='nw' 로 정확히 고정
         self.page_area = tk.Frame(canvas, bg='white')
-
-        # ⭐ 핵심: canvas 윈도우를 y=0 (canvas의 상단)에 정확히 배치
-        self._page_window = canvas.create_window(0, 0, window=self.page_area, anchor='nw', tags='page_window')
+        self._page_window = canvas.create_window(0, 0, window=self.page_area, anchor='nw')
         self._page_canvas = canvas
 
-        def _on_canvas(e):
-            # page_area의 너비를 canvas 너비에 맞춤
-            iw = self.page_area.winfo_reqwidth()
-            canvas.itemconfig(self._page_window, width=max(e.width, iw))
+        # canvas 너비 변경 → page_area 너비 동기화
+        def _on_canvas_resize(e):
+            canvas.itemconfig(self._page_window, width=e.width)
+        canvas.bind('<Configure>', _on_canvas_resize)
 
-        canvas.bind('<Configure>', _on_canvas)
+        # page_area 크기 변경(창 리사이즈 등) → scrollregion 갱신만; yview는 건드리지 않음
+        def _on_page_configure(e):
+            bb = canvas.bbox('all')
+            if bb:
+                h = max(bb[3], canvas.winfo_height() + 1)
+                canvas.configure(scrollregion=(0, 0, bb[2], h))
+
+        self.page_area.bind('<Configure>', _on_page_configure)
 
         def _on_wheel(e):
-            d = -int(e.delta) if sys.platform == 'darwin' else -int(e.delta/120)
+            d = -int(e.delta) if sys.platform == 'darwin' else -int(e.delta // 120)
             canvas.yview_scroll(d, 'units')
         canvas.bind_all('<MouseWheel>', _on_wheel)
         canvas.bind_all('<Button-4>', lambda e: canvas.yview_scroll(-1, 'units'))
@@ -418,15 +408,6 @@ class HRApp:
 
         self._nav('dashboard')
 
-        # 페이지가 완전히 로드된 후 scrollregion 설정 (중복 방지)
-        def _set_scrollregion():
-            bbox = canvas.bbox('all')
-            if bbox:
-                x1, y1, x2, y2 = bbox
-                # Ensure scrollregion starts at y=0 (to show the 24px offset space)
-                canvas.configure(scrollregion=(0, 0, x2, y2))
-            canvas.yview_moveto(0)
-        self.root.after(50, _set_scrollregion)
 
     def _build_header(self):
         hdr = tk.Frame(self.root, bg=C['header_bg'], height=56); hdr.pack(fill='x'); hdr.pack_propagate(False)
@@ -459,13 +440,6 @@ class HRApp:
             ('stats',      '통계 관리',    '#AB47BC', '📊'),
             None,
         ]
-
-        # MENU 라벨을 Frame으로 감싸서 정확한 높이(24px) 제어
-        menu_frame = tk.Frame(sb, bg=C['sidebar_bg'], height=24)
-        menu_frame.pack_propagate(False)
-        menu_frame.pack(fill='x')
-        tk.Label(menu_frame, text="MENU", font=('Malgun Gothic', 18, 'bold'),
-                 fg='#78909C', bg=C['sidebar_bg']).pack(anchor='nw', pady=(0, 0))
 
         self._sb_btns = {}; self._sb_meta = {}
         for item in menus:
@@ -509,7 +483,19 @@ class HRApp:
             'payroll':    self._pg_payroll,
             'stats':      self._pg_attendance_stats,
         }
-        if key in pages: pages[key]()
+        if key in pages:
+            pages[key]()
+            # 레이아웃 계산 완료 대기 → scrollregion 갱신 → 맨 위로 이동
+            self.root.update_idletasks()
+            c = self._page_canvas
+            bb = c.bbox('all')
+            if bb:
+                # scrollregion 높이를 canvas 높이보다 크게 설정:
+                # canvas 높이 > scrollregion 높이이면 confine=True 때문에
+                # Tkinter가 콘텐츠를 하단에 고정시켜 상단에 공백이 생기는 버그 방지
+                h = max(bb[3], c.winfo_height() + 1)
+                c.configure(scrollregion=(0, 0, bb[2], h))
+            c.yview_moveto(0)
 
     # ===========================================
     # 1. 대시보드

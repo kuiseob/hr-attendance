@@ -1,68 +1,111 @@
-name: Build Windows EXE
+name: Build Windows EXE & Release
 
 on:
   push:
-    branches: [ main, develop ]
-  pull_request:
     branches: [ main ]
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: windows-latest
-    strategy:
-      matrix:
-        python-version: ['3.11', '3.12']
-    
+
     steps:
-    - uses: actions/checkout@v3
-    
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v5
       with:
-        python-version: ${{ matrix.python-version }}
-    
+        python-version: '3.12'
+
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install pyinstaller
-    
+        pip install pyinstaller reportlab
+
     - name: Build Windows EXE
-      run: python build_exe.py
-    
-    - name: Upload artifacts
-      uses: actions/upload-artifact@v3
+      shell: pwsh
+      run: |
+        pyinstaller --onefile --windowed `
+          --name "SEOJIN_HR" `
+          hr_app.py
+
+    - name: Generate User Manual PDF
+      shell: pwsh
+      run: python make_manual.py
+
+    - name: Upload EXE artifact
+      uses: actions/upload-artifact@v4
       with:
-        name: hr_app-${{ matrix.python-version }}
-        path: dist/hr_app.exe
-        retention-days: 30
+        name: SEOJIN_HR_Windows_EXE
+        path: dist/SEOJIN_HR.exe
+        retention-days: 90
+
+    - name: Upload Manual artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: SEOJIN_HR_Manual_PDF
+        path: SEOJIN_HR_사용자매뉴얼.pdf
+        retention-days: 90
 
   release:
     needs: build
-    runs-on: windows-latest
-    if: startsWith(github.ref, 'refs/tags/')
-    
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
     steps:
-    - uses: actions/checkout@v3
-    
-    - name: Set up Python
-      uses: actions/setup-python@v4
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Download EXE
+      uses: actions/download-artifact@v4
       with:
-        python-version: '3.12'
-    
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install pyinstaller
-    
-    - name: Build EXE
-      run: python build_exe.py
-    
-    - name: Create Release
-      uses: softprops/action-gh-release@v1
+        name: SEOJIN_HR_Windows_EXE
+        path: dist/
+
+    - name: Download Manual
+      uses: actions/download-artifact@v4
       with:
-        files: dist/hr_app.exe
-        draft: false
+        name: SEOJIN_HR_Manual_PDF
+        path: ./
+
+    - name: Get short SHA
+      id: sha
+      run: echo "sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+    - name: Create rolling release
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: latest-build
+        name: "최신 빌드 (commit ${{ steps.sha.outputs.sha }})"
+        body: |
+          ## SEO JIN PRECISION CO. 인사/근태 관리 시스템
+
+          ### 📦 다운로드
+          | 파일 | 설명 |
+          |------|------|
+          | `SEOJIN_HR.exe` | Windows 실행 파일 (더블클릭으로 바로 실행) |
+          | `SEOJIN_HR_사용자매뉴얼.pdf` | 상세 사용자 매뉴얼 (14페이지) |
+
+          ### ✅ 주요 기능
+          - 인사 관리 (사원 등록/수정/삭제)
+          - 근태 관리 (출퇴근 기록, 자동 근무시간 계산)
+            - 정상근무 / 초과🟠 / 야간🔵 / 특근🔴 / 야간특근 구분
+          - 휴가 관리 (연차/병가/휴직 신청·승인)
+          - 급여 관리 (각종 수당 자동 계산)
+          - 월별 통계 (직원별 근무유형별 집계)
+
+          ### 🚀 설치 방법
+          1. `SEOJIN_HR.exe` 다운로드
+          2. 원하는 폴더에 저장
+          3. 더블클릭으로 실행 (별도 설치 불필요)
+
+          > 빌드 번호: #${{ github.run_number }} | 커밋: ${{ steps.sha.outputs.sha }}
+        files: |
+          dist/SEOJIN_HR.exe
+          SEOJIN_HR_사용자매뉴얼.pdf
         prerelease: false
+        make_latest: true
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
