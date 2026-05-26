@@ -1,0 +1,8 @@
+# SEOJIN HR & ATTENDANCE - Python 의존성
+
+# GUI Framework (Tkinter은 Python 표준 라이브러리)
+# tkinter - 포함됨
+
+# 선택사항: EXE 빌드시에만 필요
+# pyinstaller>=6.0
+
