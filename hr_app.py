@@ -372,8 +372,8 @@ class HRApp:
 
         # 상단 패딩 프레임 (MENU 라벨 높이와 동일)
         top_pad = tk.Frame(scroll_wrap, bg='white', height=24)
-        top_pad.pack(fill='x')
         top_pad.pack_propagate(False)
+        top_pad.pack(fill='x')
 
         # grid를 사용하여 canvas와 vbar를 정확히 상단에 정렬
         scroll_wrap_inner = tk.Frame(scroll_wrap, bg='white')
@@ -455,8 +455,8 @@ class HRApp:
 
         # MENU 라벨을 Frame으로 감싸서 정확한 높이(24px) 제어
         menu_frame = tk.Frame(sb, bg=C['sidebar_bg'], height=24)
-        menu_frame.pack(fill='x')
         menu_frame.pack_propagate(False)
+        menu_frame.pack(fill='x')
         tk.Label(menu_frame, text="MENU", font=('Malgun Gothic', 18, 'bold'),
                  fg='#78909C', bg=C['sidebar_bg']).pack(anchor='nw', pady=(0, 0))
 
