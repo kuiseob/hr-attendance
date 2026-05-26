@@ -292,8 +292,8 @@ def fill_tree(tree, rows, tag_fn=None):
         tree.insert('', 'end', values=tuple(row), tags=(tag,))
 
 def page_header(parent, title, sub=''):
-    # Align with left sidebar MENU label height
-    spacer = tk.Frame(parent, bg='white', height=22)
+    # Align with left sidebar MENU label height (18pt font ≈ 24px)
+    spacer = tk.Frame(parent, bg='white', height=24)
     spacer.pack(fill='x')
     spacer.pack_propagate(False)
 
