@@ -292,13 +292,16 @@ def fill_tree(tree, rows, tag_fn=None):
         tree.insert('', 'end', values=tuple(row), tags=(tag,))
 
 def page_header(parent, title, sub=''):
+    # 좌측 메뉴 MENU 라벨과 높이 맞추기 위한 상단 여백
+    tk.Frame(parent, bg='white', height=26).pack(fill='x')
+
     f = tk.Frame(parent, bg='white'); f.pack(fill='x', pady=(0, 0))
     tk.Label(f, text=title, font=('Malgun Gothic', 18, 'bold'),
              fg=C['primary'], bg='white').pack(side='left', padx=24, pady=(0, 2))
     if sub:
         tk.Label(f, text=sub, font=('Malgun Gothic', 10),
                  fg=C['secondary'], bg='white').pack(side='left', pady=(0, 2))
-    tk.Frame(parent, bg=C['primary'], height=8).pack(fill='x')
+    tk.Frame(parent, bg=C['primary'], height=2).pack(fill='x')
 
 
 # ────────────────────────────────────────
