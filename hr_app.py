@@ -439,9 +439,9 @@ class HRApp:
             row = tk.Frame(sb, bg=C['sidebar_bg']); row.pack(fill='x', padx=3, pady=0)
             bar = tk.Frame(row, bg=C['sidebar_bg'], width=5); bar.pack(side='left', fill='y')
             btn = tk.Button(row, text=f"  {emoji}  {label}",
-                            font=('Malgun Gothic', 14, 'bold'),
+                            font=('Malgun Gothic', 18, 'bold'),
                             fg='#000000', bg=C['sidebar_bg'],
-                            relief='flat', anchor='w', cursor='hand2', pady=8,
+                            relief='flat', anchor='w', cursor='hand2', pady=2,
                             activebackground=color, activeforeground='black',
                             command=lambda k=key: self._nav(k))
             btn.pack(side='left', fill='x', expand=True)
