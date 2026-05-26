@@ -483,7 +483,7 @@ class HRApp:
         page_header(p, "대시보드", "  인사 / 근태 / 휴가 / 급여 요약")
 
         # 통계 카드
-        cards = tk.Frame(p, bg=C['bg']); cards.pack(fill='x', padx=20, pady=(0, 18))
+        cards = tk.Frame(p, bg='white', padx=20, pady=12); cards.pack(fill='x', pady=(0, 12))
         today = date.today().isoformat()
         ym = date.today().strftime('%Y-%m')
 
@@ -498,7 +498,7 @@ class HRApp:
             ('휴가 대기', f"{leave_pending}건", '#FFA726'),
             (f'{ym} 급여', f"{int(pay_total):,}원", '#5E35B1'),
         ]:
-            card = tk.Frame(cards, bg=color, padx=16, pady=18)
+            card = tk.Frame(cards, bg=color, padx=16, pady=14)
             card.pack(side='left', expand=True, fill='both', padx=6)
             tk.Label(card, text=val, font=('Malgun Gothic', 20, 'bold'),
                      fg='white', bg=color).pack()
@@ -506,7 +506,7 @@ class HRApp:
                      fg='#E0E0E0', bg=color).pack()
 
         # 부서별 인원
-        make_label(p, " 부서별 인원", bold=True, size=11, bg=C['bg']).pack(anchor='w', padx=22, pady=(10, 2))
+        make_label(p, " 부서별 인원", bold=True, size=11, bg=C['bg']).pack(anchor='w', padx=22, pady=(12, 2))
         wrap = tk.Frame(p, bg=C['bg']); wrap.pack(fill='x', padx=20, pady=4)
         cols = ('부서', '인원수')
         tree = make_tree(wrap, cols, [200, 80], height=6)
@@ -515,7 +515,7 @@ class HRApp:
         fill_tree(tree, rows)
 
         # 휴가 신청 대기
-        make_label(p, " 휴가 신청 대기", bold=True, size=11, color=C['warning'], bg=C['bg']).pack(anchor='w', padx=22, pady=(14, 2))
+        make_label(p, " 휴가 신청 대기", bold=True, size=11, color=C['warning'], bg=C['bg']).pack(anchor='w', padx=22, pady=(12, 2))
         wrap2 = tk.Frame(p, bg=C['bg']); wrap2.pack(fill='x', padx=20, pady=4)
         cols2 = ('사번', '이름', '구분', '시작일', '종료일', '일수', '사유')
         tree2 = make_tree(wrap2, cols2, [80, 80, 70, 100, 100, 60, 280], height=6)
@@ -532,7 +532,7 @@ class HRApp:
         p = self.page_area
         page_header(p, "인사 관리", "  사원 기본정보 — 등록 / 수정 / 삭제")
 
-        f = tk.Frame(p, bg='white', padx=22, pady=18); f.pack(fill='x', padx=20, pady=(0, 12))
+        f = tk.Frame(p, bg='white', padx=20, pady=12); f.pack(fill='x', pady=(0, 12))
         vs = {k: tk.StringVar() for k in
               ('emp_no','name','dept','position','join_date','phone','email','base_salary','status')}
         es = {}
@@ -556,7 +556,7 @@ class HRApp:
 
         _lbl(2, 0, "기본급(원)"); es['base_salary'] = make_entry(f, vs['base_salary'], 14); es['base_salary'].grid(row=2, column=1, padx=4, pady=8)
 
-        wrap = tk.Frame(p, bg=C['bg']); wrap.pack(fill='both', expand=True, padx=20, pady=6)
+        wrap = tk.Frame(p, bg=C['bg']); wrap.pack(fill='both', expand=True, padx=20, pady=4)
         cols = ('사번','이름','부서','직급','입사일','연락처','이메일','기본급','상태')
         tree = make_tree(wrap, cols, [80, 80, 90, 70, 100, 130, 180, 100, 60], height=14)
         edit_id = [None]
@@ -895,7 +895,7 @@ class HRApp:
         m_v = tk.StringVar()
         m_e = make_entry(f, m_v, 36); m_e.grid(row=1, column=3, columnspan=4, padx=4, sticky='w')
 
-        wrap = tk.Frame(p, bg=C['bg']); wrap.pack(fill='both', expand=True, padx=20, pady=6)
+        wrap = tk.Frame(p, bg=C['bg']); wrap.pack(fill='both', expand=True, padx=20, pady=4)
         cols = ('AID','근무일','사번','이름','출근','퇴근','근무시간','초과','야간','특근','상태','비고')
         tree = make_tree(wrap, cols, [0, 80, 70, 70, 65, 65, 75, 65, 65, 65, 65, 100], height=14)
         tree.column('AID', width=0, stretch=False)
@@ -1087,7 +1087,7 @@ class HRApp:
         emps = self.db.query("SELECT id,emp_no,name FROM employees WHERE active=1 ORDER BY emp_no")
         emp_disp = [f"{r[1]} {r[2]}" for r in emps]
 
-        f = tk.Frame(p, bg='white', padx=22, pady=18); f.pack(fill='x', padx=20, pady=(0, 12))
+        f = tk.Frame(p, bg='white', padx=20, pady=12); f.pack(fill='x', pady=(0, 12))
         def _lbl(r, c, t):
             make_label(f, t, size=9, color=C['secondary'], bg='white').grid(row=r, column=c, sticky='w', padx=6, pady=10)
 
@@ -1115,7 +1115,7 @@ class HRApp:
         ap_v = tk.StringVar(value='대기')
         ap_e = make_combo(f, ap_v, ['대기','승인','반려','취소'], width=10); ap_e.grid(row=1, column=6, padx=4)
 
-        wrap = tk.Frame(p, bg=C['bg']); wrap.pack(fill='both', expand=True, padx=20, pady=6)
+        wrap = tk.Frame(p, bg=C['bg']); wrap.pack(fill='both', expand=True, padx=20, pady=4)
         cols = ('LID','사번','이름','구분','시작','종료','일수','사유','상태')
         tree = make_tree(wrap, cols, [0, 80, 80, 70, 100, 100, 60, 230, 70], height=14)
         tree.column('LID', width=0, stretch=False)
@@ -1228,7 +1228,7 @@ class HRApp:
         emp_disp = [f"{r[1]} {r[2]}" for r in emps]
 
         # ─ 사원 정보 & 기본급
-        f = tk.Frame(p, bg='white', padx=22, pady=12); f.pack(fill='x', padx=20, pady=(0, 8))
+        f = tk.Frame(p, bg='white', padx=20, pady=12); f.pack(fill='x', pady=(0, 12))
         def _lbl(r, c, t):
             make_label(f, t, size=9, color=C['secondary'], bg='white').grid(row=r, column=c, sticky='w', padx=6, pady=6)
 
@@ -1369,7 +1369,7 @@ class HRApp:
         pm_v.trace_add('write', _on_change)
         for v in (base_v, ot_rate, night_rate, sp_rate, ns_rate, bn_v, ded_v): v.trace_add('write', _calc)
 
-        wrap = tk.Frame(p, bg=C['bg']); wrap.pack(fill='both', expand=True, padx=20, pady=6)
+        wrap = tk.Frame(p, bg=C['bg']); wrap.pack(fill='both', expand=True, padx=20, pady=4)
         cols = ('PID','월','사번','이름','기본급','초과','상여','공제','실수령','지급일')
         tree = make_tree(wrap, cols, [0, 80, 80, 80, 100, 80, 80, 80, 110, 100], height=14)
         tree.column('PID', width=0, stretch=False)
@@ -1529,14 +1529,14 @@ class HRApp:
 
         # 통계 테이블
         wrap = tk.Frame(p, bg=C['bg'])
-        wrap.pack(fill='both', expand=True, padx=20, pady=6)
+        wrap.pack(fill='both', expand=True, padx=20, pady=4)
 
         cols = ('emp_no', 'name', 'regular', 'overtime', 'night', 'special', 'night_sp', 'total')
         col_names = ('사번', '이름', '정상근무', '초과근무', '야간근무', '특근근무', '야간특근', '총근무시간')
         col_widths = [70, 100, 80, 80, 80, 80, 80, 100]
 
         stats_tree = tk.ttk.Treeview(wrap, columns=col_names, show='headings', height=20)
-        for i, (col, name, width) in enumerate(zip(cols, col_names, col_widths)):
+        for col, name, width in zip(col_names, col_names, col_widths):
             stats_tree.column(col, width=width, anchor='center')
             stats_tree.heading(col, text=name)
 
