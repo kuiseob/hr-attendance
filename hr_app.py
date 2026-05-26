@@ -436,7 +436,7 @@ class HRApp:
         menu_frame.pack(fill='x')
         menu_frame.pack_propagate(False)
         tk.Label(menu_frame, text="MENU", font=('Malgun Gothic', 18, 'bold'),
-                 fg='#78909C', bg=C['sidebar_bg']).pack(side='left', padx=22)
+                 fg='#78909C', bg=C['sidebar_bg']).pack(pady=(0, 0))
 
         self._sb_btns = {}; self._sb_meta = {}
         for item in menus:
