@@ -293,7 +293,9 @@ def fill_tree(tree, rows, tag_fn=None):
 
 def page_header(parent, title, sub=''):
     # 좌측 메뉴 MENU 라벨과 높이 맞추기 위한 상단 여백
-    tk.Frame(parent, bg='white', height=26).pack(fill='x')
+    spacer = tk.Frame(parent, bg='white', height=26)
+    spacer.pack(fill='x')
+    spacer.pack_propagate(False)
 
     f = tk.Frame(parent, bg='white'); f.pack(fill='x', pady=(0, 0))
     tk.Label(f, text=title, font=('Malgun Gothic', 18, 'bold'),
