@@ -436,12 +436,12 @@ class HRApp:
                 continue
             key, label, color, emoji = item
             self._sb_meta[key] = (color, emoji, label)
-            row = tk.Frame(sb, bg=C['sidebar_bg']); row.pack(fill='x', padx=3, pady=1)
+            row = tk.Frame(sb, bg=C['sidebar_bg']); row.pack(fill='x', padx=3, pady=0)
             bar = tk.Frame(row, bg=C['sidebar_bg'], width=5); bar.pack(side='left', fill='y')
             btn = tk.Button(row, text=f"  {emoji}  {label}",
                             font=('Malgun Gothic', 14, 'bold'),
                             fg='#000000', bg=C['sidebar_bg'],
-                            relief='flat', anchor='w', cursor='hand2', pady=3,
+                            relief='flat', anchor='w', cursor='hand2', pady=8,
                             activebackground=color, activeforeground='black',
                             command=lambda k=key: self._nav(k))
             btn.pack(side='left', fill='x', expand=True)
