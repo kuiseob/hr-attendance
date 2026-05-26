@@ -21,7 +21,8 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install pyinstaller reportlab
+        pip install pyinstaller
+      shell: pwsh
 
     - name: Build Windows EXE
       shell: pwsh
@@ -30,10 +31,6 @@ jobs:
           --name "SEOJIN_HR" `
           hr_app.py
 
-    - name: Generate User Manual PDF
-      shell: pwsh
-      run: python make_manual.py
-
     - name: Upload EXE artifact
       uses: actions/upload-artifact@v4
       with:
@@ -41,7 +38,8 @@ jobs:
         path: dist/SEOJIN_HR.exe
         retention-days: 90
 
-    - name: Upload Manual artifact
+    # PDF는 이미 저장소에 포함된 파일을 아티팩트로 업로드
+    - name: Upload Manual artifact (from repo)
       uses: actions/upload-artifact@v4
       with:
         name: SEOJIN_HR_Manual_PDF
@@ -63,12 +61,6 @@ jobs:
       with:
         name: SEOJIN_HR_Windows_EXE
         path: dist/
-
-    - name: Download Manual
-      uses: actions/download-artifact@v4
-      with:
-        name: SEOJIN_HR_Manual_PDF
-        path: ./
 
     - name: Get short SHA
       id: sha
@@ -100,6 +92,7 @@ jobs:
           1. `SEOJIN_HR.exe` 다운로드
           2. 원하는 폴더에 저장
           3. 더블클릭으로 실행 (별도 설치 불필요)
+          4. 처음 실행 시 같은 폴더에 `hr.db` 데이터베이스 자동 생성
 
           > 빌드 번호: #${{ github.run_number }} | 커밋: ${{ steps.sha.outputs.sha }}
         files: |
