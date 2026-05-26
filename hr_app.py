@@ -372,13 +372,18 @@ class HRApp:
 
         # 페이지 영역 (스크롤)
         scroll_wrap = tk.Frame(content, bg='white')
-        scroll_wrap.pack(side='left', fill='both', expand=True, anchor='nw')
+        scroll_wrap.pack(side='left', fill='both', expand=True)
+
+        # grid를 사용하여 canvas와 vbar를 정확히 상단에 정렬
+        scroll_wrap.grid_rowconfigure(0, weight=1)
+        scroll_wrap.grid_columnconfigure(0, weight=1)
+
         vbar = ttk.Scrollbar(scroll_wrap, orient='vertical')
         canvas = tk.Canvas(scroll_wrap, bg='white', highlightthickness=0,
                            borderwidth=0, yscrollcommand=vbar.set)
         vbar.config(command=canvas.yview)
-        vbar.pack(side='right', fill='y')
-        canvas.pack(side='left', fill='both', expand=True, anchor='nw')
+        vbar.grid(row=0, column=1, sticky='ns')
+        canvas.grid(row=0, column=0, sticky='nsew')
 
         self.page_area = tk.Frame(canvas, bg='white')
         self._page_window = canvas.create_window((0, 0), window=self.page_area, anchor='nw')
