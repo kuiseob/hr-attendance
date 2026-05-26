@@ -292,9 +292,9 @@ def fill_tree(tree, rows, tag_fn=None):
         tree.insert('', 'end', values=tuple(row), tags=(tag,))
 
 def page_header(parent, title, sub=''):
-    # 좌측 메뉴 첫 번째 버튼과 높이 맞추기 위한 상단 여백
-    # MENU 라벨(24px) + 메뉴 버튼(30px) = 54px
-    spacer = tk.Frame(parent, bg='white', height=54)
+    # 좌측 메뉴 MENU와 첫 번째 버튼의 시작점을 맞추기 위한 상단 여백
+    # MENU 라벨 높이(24px)만 필요
+    spacer = tk.Frame(parent, bg='white', height=24)
     spacer.pack(fill='x')
     spacer.pack_propagate(False)
 
