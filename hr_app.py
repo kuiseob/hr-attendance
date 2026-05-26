@@ -292,6 +292,11 @@ def fill_tree(tree, rows, tag_fn=None):
         tree.insert('', 'end', values=tuple(row), tags=(tag,))
 
 def page_header(parent, title, sub=''):
+    # ⭐ 핵심: canvas 상단의 top_pad와 맞추기 위해 명시적 24px 스페이서
+    header_spacer = tk.Frame(parent, bg='white', height=24)
+    header_spacer.pack_propagate(False)
+    header_spacer.pack(fill='x')
+
     tk.Label(parent, text=title, font=('Malgun Gothic', 18, 'bold'),
              fg=C['primary'], bg='white').pack(anchor='nw', padx=24, pady=(0, 0))
     if sub:
@@ -366,37 +371,39 @@ class HRApp:
         content = tk.Frame(self.root, bg='white'); content.pack(fill='both', expand=True, anchor='nw')
         self._build_sidebar(content)
 
-        # 페이지 영역 (스크롤)
+        # 페이지 영역 (스크롤) - Canvas 대신 Frame + Scrollbar 사용
         scroll_wrap = tk.Frame(content, bg='white')
         scroll_wrap.pack(side='left', fill='both', expand=True, anchor='nw')
 
-        # 상단 패딩 프레임 (MENU 라벨 높이와 동일)
+        # 상단 패딩 프레임 - ⭐ 핵심! (MENU 라벨 높이와 정확히 동일)
         top_pad = tk.Frame(scroll_wrap, bg='white', height=24)
         top_pad.pack_propagate(False)
         top_pad.pack(fill='x')
 
-        # grid를 사용하여 canvas와 vbar를 정확히 상단에 정렬
-        scroll_wrap_inner = tk.Frame(scroll_wrap, bg='white')
-        scroll_wrap_inner.pack(fill='both', expand=True)
+        # 스크롤 컨테이너 (frame + canvas + scrollbar)
+        scroll_container = tk.Frame(scroll_wrap, bg='white')
+        scroll_container.pack(fill='both', expand=True)
 
-        scroll_wrap_inner.grid_rowconfigure(0, weight=1)
-        scroll_wrap_inner.grid_columnconfigure(0, weight=1)
+        scroll_container.grid_rowconfigure(0, weight=1)
+        scroll_container.grid_columnconfigure(0, weight=1)
 
-        vbar = ttk.Scrollbar(scroll_wrap_inner, orient='vertical')
-        canvas = tk.Canvas(scroll_wrap_inner, bg='white', highlightthickness=0,
+        # Canvas와 Scrollbar
+        vbar = ttk.Scrollbar(scroll_container, orient='vertical')
+        canvas = tk.Canvas(scroll_container, bg='white', highlightthickness=0,
                            borderwidth=0, yscrollcommand=vbar.set)
         vbar.config(command=canvas.yview)
         vbar.grid(row=0, column=1, sticky='ns')
         canvas.grid(row=0, column=0, sticky='nsew')
 
+        # page_area를 canvas 내부에 생성 (y=0에 정확히 배치)
         self.page_area = tk.Frame(canvas, bg='white')
-        canvas.delete('all')  # 기존 canvas items 완전 제거
 
-        # Simplest possible approach: just position page_area at y=0 normally
-        self._page_window = canvas.create_window((0, 0), window=self.page_area, anchor='nw')
+        # ⭐ 핵심: canvas 윈도우를 y=0 (canvas의 상단)에 정확히 배치
+        self._page_window = canvas.create_window(0, 0, window=self.page_area, anchor='nw', tags='page_window')
         self._page_canvas = canvas
 
         def _on_canvas(e):
+            # page_area의 너비를 canvas 너비에 맞춤
             iw = self.page_area.winfo_reqwidth()
             canvas.itemconfig(self._page_window, width=max(e.width, iw))
 
